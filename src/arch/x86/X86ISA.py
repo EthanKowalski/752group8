@@ -41,6 +41,7 @@ class X86ISA(BaseISA):
     type = "X86ISA"
     cxx_class = "gem5::X86ISA::ISA"
     cxx_header = "arch/x86/isa.hh"
+    fuzz_TSC = param.bool(False, "Fuzz the TSC")
 
     # Here we set the default vector string to "HygonGenuine". Previously this
     # "M5 Simulator" but due to stricter checks in newer versions of GLIBC,
