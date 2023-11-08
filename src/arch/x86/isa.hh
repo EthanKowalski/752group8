@@ -58,6 +58,7 @@ class ISA : public BaseISA
             SegAttr csAttr, SegAttr ssAttr, RFLAGS rflags);
 
     std::string vendorString;
+    bool fuzz_TSC;
 
   public:
     void clear() override;
@@ -93,6 +94,7 @@ class ISA : public BaseISA
     void setThreadContext(ThreadContext *_tc) override;
 
     std::string getVendorString() const;
+    bool getFuzzTSC() const;
 };
 
 } // namespace X86ISA

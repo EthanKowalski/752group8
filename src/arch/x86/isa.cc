@@ -151,7 +151,8 @@ RegClass matRegClass(MatRegClass, MatRegClassName, 1, debug::MatRegs);
 
 } // anonymous namespace
 
-ISA::ISA(const X86ISAParams &p) : BaseISA(p), vendorString(p.vendor_string)
+ISA::ISA(const X86ISAParams &p) : BaseISA(p), vendorString(p.vendor_string), \
+fuzz_TSC(p.fuzz_TSC)
 {
     fatal_if(vendorString.size() != 12,
              "CPUID vendor string must be 12 characters\n");
@@ -214,6 +215,9 @@ ISA::readMiscRegNoEffect(RegIndex idx) const
 
     return regVal[idx];
 }
+
+int backlog = 0;
+
 
 RegVal
 ISA::readMiscReg(RegIndex idx)
@@ -506,6 +510,12 @@ std::string
 ISA::getVendorString() const
 {
     return vendorString;
+}
+
+bool
+ISA::getFuzzTSC() const
+{
+    return fuzz_TSC;
 }
 
 } // namespace X86ISA
