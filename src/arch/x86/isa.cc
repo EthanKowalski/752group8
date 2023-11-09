@@ -219,7 +219,10 @@ RegVal
 ISA::readMiscReg(RegIndex idx)
 {
     if (idx == misc_reg::Tsc) {
-        return regVal[misc_reg::Tsc] + tc->getCpuPtr()->curCycle();
+        uint64_t val = regVal[misc_reg::Tsc] + tc->getCpuPtr()->curCycle(); // Get TSC
+        if (fuzz_TSC) val = val + rand()/(RAND_MAX/128) - 64; // Apply random offset
+        //if (fuzz_TSC) val = val & (0xFFFFFFFFFFFFFF80 + 0x40); // Round to nearest 0x80
+        return val;
     }
 
     if (idx == misc_reg::Fsw) {
