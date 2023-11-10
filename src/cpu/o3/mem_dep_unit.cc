@@ -60,7 +60,8 @@ MemDepUnit::MemDepUnit(const BaseO3CPUParams &params)
               params.LFSTSize),
       iqPtr(NULL),
       stats(nullptr),
-      delayCtrlSpecLoad(params.delayCtrlSpecLoad)
+      delayCtrlSpecLoad(params.delayCtrlSpecLoad),
+      delayTaintedLoad(params.delayTaintedLoad)
 {
     DPRINTF(MemDepUnit, "Creating MemDepUnit object.\n");
 }
@@ -99,6 +100,9 @@ MemDepUnit::init(const BaseO3CPUParams &params, ThreadID tid, CPU *cpu)
 
     depPred.init(params.store_set_clear_period, params.SSITSize,
             params.LFSTSize);
+
+    delayCtrlSpecLoad = params.delayCtrlSpecLoad;
+    delayTaintedLoad= params.delayTaintedLoad;
 
     std::string stats_group_name = csprintf("MemDepUnit__%i", tid);
     cpu->addStatGroup(stats_group_name.c_str(), &stats);
@@ -614,6 +618,8 @@ MemDepUnit::moveToReady(MemDepEntryPtr &woken_inst_entry)
 
     assert(!woken_inst_entry->squashed);
 
+    /* Homework Part 2 */
+
     if (delayCtrlSpecLoad && !branchSet.empty()) {
       if (*branchSet.begin() < woken_inst_entry->inst->seqNum) {
         woken_inst_entry->inst->waitingBranchResolution(true);
@@ -624,6 +630,44 @@ MemDepUnit::moveToReady(MemDepEntryPtr &woken_inst_entry)
     if (delayCtrlSpecLoad && woken_inst_entry->inst->waitingBranchResolution()) {
       woken_inst_entry->inst->waitingBranchResolution(false);
     }
+
+    /* Homework Part 3
+    Update your logic in moveToReady to allow speculative issue of loads if there are older
+    unresolved branches, as long as they are not already tainted. Set the taint flag for any
+    such load so its dependents are also marked tainted by your changes in step 3.
+    */
+
+//    bool sawTaint = false;
+//    if (delayCtrlSpecLoad && !branchSet.empty()) {
+//      for (branchSeq = branchSet.begin(); branchSeq != branchSet.end(); branchSeq++) {
+//        if (branchSeq > woken_inst_entry->inst->seqNum){
+//          break;
+//        }
+//        if (itr->taintedLoad)
+//      }
+//    }
+
+    if (delayTaintedLoad){
+      bool oldest = (branchSet.empty() || *branchSet.begin() >= woken_inst_entry->inst->seqNum);
+
+      // if we are the oldest, always allow
+      if (oldest){}
+      // otherwise, if we are already tainted return early
+      else if (woken_inst_entry->inst->taintedLoad()) {
+        woken_inst_entry->inst->waitingBranchResolution(true);
+        return;
+      }
+      // otherwise, allow but taint it
+      else {
+        woken_inst_entry->inst->taintedLoad(true);
+      }
+
+      if (delayTaintedLoad && woken_inst_entry->inst->waitingBranchResolution()) {
+        woken_inst_entry->inst->waitingBranchResolution(false);
+      }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
 
     iqPtr->addReadyMemInst(woken_inst_entry->inst);
 }
@@ -661,19 +705,19 @@ MemDepUnit::dumpLists()
 
 /* HW3 - 2.3.2 */
 void MemDepUnit::unresolvedBranchInsert(const DynInstPtr &inst){
-  if (!delayCtrlSpecLoad) {
+  if (!delayCtrlSpecLoad && !delayTaintedLoad) {
     return;
   }
     branchSet.insert(inst->seqNum);
 }
 void MemDepUnit::unresolvedBranchRemove(const DynInstPtr &inst){
-  if (!delayCtrlSpecLoad) {
+  if (!delayCtrlSpecLoad && !delayTaintedLoad) {
     return;
   }
     branchSet.erase(inst->seqNum);
 }
 void MemDepUnit::unresolvedBranchResolve(const DynInstPtr &inst){
-  if (!delayCtrlSpecLoad) {
+  if (!delayCtrlSpecLoad && !delayTaintedLoad) {
     return;
   }
     branchSet.erase(inst->seqNum);

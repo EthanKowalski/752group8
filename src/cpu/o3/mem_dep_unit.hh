@@ -92,6 +92,7 @@ class MemDepUnit
   protected:
     std::string _name;
     bool delayCtrlSpecLoad;
+    bool delayTaintedLoad;
 
   public:
     /** Empty constructor. Must call init() prior to using in this case. */

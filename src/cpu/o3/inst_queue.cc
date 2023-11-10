@@ -1049,6 +1049,9 @@ InstructionQueue::wakeDependents(const DynInstPtr &completed_inst)
             DPRINTF(IQ, "Waking up a dependent instruction, [sn:%llu] "
                     "PC %s.\n", dep_inst->seqNum, dep_inst->pcState());
 
+            /* HW 3.3 */
+            dep_inst->taintedLoad(completed_inst->taintedLoad());
+
             // Might want to give more information to the instruction
             // so that it knows which of its source registers is
             // ready.  However that would mean that the dependency

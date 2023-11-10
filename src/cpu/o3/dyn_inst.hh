@@ -188,6 +188,7 @@ class DynInst : public ExecContext, public RefCounted
         MemOpDone,
         HtmFromTransaction,
         WaitingBranchResolution,
+        TaintedLoad,
         MaxFlags
     };
 
@@ -371,6 +372,10 @@ class DynInst : public ExecContext, public RefCounted
     /** Is the instruction waiting for a branch to resolve. */
     bool waitingBranchResolution() const { return instFlags[WaitingBranchResolution]; }
     void waitingBranchResolution(bool b) { instFlags[WaitingBranchResolution] = b; }
+
+    /** Is this related to a tainted load. */
+    bool taintedLoad() const { return instFlags[TaintedLoad]; }
+    void taintedLoad(bool b) { instFlags[TaintedLoad] = b; }
 
     /** Records changes to result? */
     void recordResult(bool f) { instFlags[RecordResult] = f; }

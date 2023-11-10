@@ -165,6 +165,8 @@ ISA::ISA(const X86ISAParams &p) : BaseISA(p), vendorString(p.vendor_string), fuz
     _regClasses.push_back(&ccRegClass);
     _regClasses.push_back(&miscRegClass);
 
+    fuzz_TSC = p.fuzz_TSC;
+
     clear();
 }
 
@@ -532,7 +534,7 @@ ISA::getVendorString() const
 bool
 ISA::getFuzzTSC() const
 {
-    return true;
+    return fuzz_TSC;
 }
 
 } // namespace X86ISA
