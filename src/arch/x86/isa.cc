@@ -151,8 +151,7 @@ RegClass matRegClass(MatRegClass, MatRegClassName, 1, debug::MatRegs);
 
 } // anonymous namespace
 
-ISA::ISA(const X86ISAParams &p) : BaseISA(p), vendorString(p.vendor_string), \
-fuzz_TSC(p.fuzz_TSC)
+ISA::ISA(const X86ISAParams &p) : BaseISA(p), vendorString(p.vendor_string), fuzz_TSC(p.fuzz_TSC)
 {
     fatal_if(vendorString.size() != 12,
              "CPUID vendor string must be 12 characters\n");
@@ -218,12 +217,30 @@ ISA::readMiscRegNoEffect(RegIndex idx) const
 
 int backlog = 0;
 
+int modifier = 0;
+int times_modified = 0;
+
 
 RegVal
 ISA::readMiscReg(RegIndex idx)
 {
+//    if (backlog < 0){
+//          backlog += 1;
+//        }
+
     if (idx == misc_reg::Tsc) {
-        return regVal[misc_reg::Tsc] + tc->getCpuPtr()->curCycle();
+//      if (getFuzzTSC()){
+//        backlog -= 100;
+//      }
+        modifier = (int)((rand() % (5 * times_modified)) * pow(0.9, times_modified / 10000));
+        times_modified += 1000;
+
+        uint64_t val = regVal[misc_reg::Tsc] + tc->getCpuPtr()->curCycle();
+//        if (getFuzzTSC()) val = val + rand() /(RAND_MAX / 128) - 64;
+
+        return val + modifier;
+    } else {
+      times_modified -= 1;
     }
 
     if (idx == misc_reg::Fsw) {
@@ -515,7 +532,7 @@ ISA::getVendorString() const
 bool
 ISA::getFuzzTSC() const
 {
-    return fuzz_TSC;
+    return true;
 }
 
 } // namespace X86ISA

@@ -59,7 +59,8 @@ MemDepUnit::MemDepUnit(const BaseO3CPUParams &params)
       depPred(params.store_set_clear_period, params.SSITSize,
               params.LFSTSize),
       iqPtr(NULL),
-      stats(nullptr)
+      stats(nullptr),
+      delayCtrlSpecLoad(params.delayCtrlSpecLoad)
 {
     DPRINTF(MemDepUnit, "Creating MemDepUnit object.\n");
 }
@@ -186,6 +187,7 @@ MemDepUnit::insertBarrierSN(const DynInstPtr &barr_inst)
     }
 }
 
+// BOOKMARK
 void
 MemDepUnit::insert(const DynInstPtr &inst)
 {
@@ -455,6 +457,7 @@ MemDepUnit::completeInst(const DynInstPtr &inst)
     }
 }
 
+// BOOKMARK
 void
 MemDepUnit::wakeDependents(const DynInstPtr &inst)
 {
@@ -480,6 +483,10 @@ MemDepUnit::wakeDependents(const DynInstPtr &inst)
 
         assert(woken_inst->memDeps > 0);
         woken_inst->memDeps -= 1;
+
+//        if (woken_inst->inst->waitingBranchResolution()){
+//
+//        }
 
         if ((woken_inst->memDeps == 0) &&
             woken_inst->regsReady &&
@@ -598,6 +605,7 @@ MemDepUnit::findInHash(const DynInstConstPtr &inst)
     return (*hash_it).second;
 }
 
+// BOOKMARK
 void
 MemDepUnit::moveToReady(MemDepEntryPtr &woken_inst_entry)
 {
@@ -605,6 +613,17 @@ MemDepUnit::moveToReady(MemDepEntryPtr &woken_inst_entry)
             "to the ready list.\n", woken_inst_entry->inst->seqNum);
 
     assert(!woken_inst_entry->squashed);
+
+    if (delayCtrlSpecLoad && !branchSet.empty()) {
+      if (*branchSet.begin() < woken_inst_entry->inst->seqNum) {
+        woken_inst_entry->inst->waitingBranchResolution(true);
+        return;
+      }
+    }
+
+    if (delayCtrlSpecLoad && woken_inst_entry->inst->waitingBranchResolution()) {
+      woken_inst_entry->inst->waitingBranchResolution(false);
+    }
 
     iqPtr->addReadyMemInst(woken_inst_entry->inst);
 }
@@ -638,6 +657,48 @@ MemDepUnit::dumpLists()
 #ifdef GEM5_DEBUG
     cprintf("Memory dependence entries: %i\n", MemDepEntry::memdep_count);
 #endif
+}
+
+/* HW3 - 2.3.2 */
+void MemDepUnit::unresolvedBranchInsert(const DynInstPtr &inst){
+  if (!delayCtrlSpecLoad) {
+    return;
+  }
+    branchSet.insert(inst->seqNum);
+}
+void MemDepUnit::unresolvedBranchRemove(const DynInstPtr &inst){
+  if (!delayCtrlSpecLoad) {
+    return;
+  }
+    branchSet.erase(inst->seqNum);
+}
+void MemDepUnit::unresolvedBranchResolve(const DynInstPtr &inst){
+  if (!delayCtrlSpecLoad) {
+    return;
+  }
+    branchSet.erase(inst->seqNum);
+//    iqPtr->wakeDependents(inst);
+    for (ThreadID tid = 0; tid < MaxThreads; tid++) {
+
+      ListIt inst_list_it = instList[tid].begin();
+
+      while (inst_list_it != instList[tid].end()) {
+
+//        iqPtr->wakeDependents((*inst_list_it));
+          if ((*inst_list_it)->waitingBranchResolution()){
+//            wakeDependents((*inst_list_it));
+            MemDepEntryPtr inst_entry = findInHash((*inst_list_it));
+            moveToReady(inst_entry);
+          }
+
+
+//        wakeDependents((*inst_list_it));
+
+//        MemDepEntryPtr inst_entry = findInHash((*inst_list_it));
+//        moveToReady(inst_entry);
+        inst_list_it++;
+      }
+    }
 }
 
 } // namespace o3

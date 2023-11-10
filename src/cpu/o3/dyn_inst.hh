@@ -187,6 +187,7 @@ class DynInst : public ExecContext, public RefCounted
         ReqMade,
         MemOpDone,
         HtmFromTransaction,
+        WaitingBranchResolution,
         MaxFlags
     };
 
@@ -367,6 +368,10 @@ class DynInst : public ExecContext, public RefCounted
     RequestPtr reqToVerify;
 
   public:
+    /** Is the instruction waiting for a branch to resolve. */
+    bool waitingBranchResolution() const { return instFlags[WaitingBranchResolution]; }
+    void waitingBranchResolution(bool b) { instFlags[WaitingBranchResolution] = b; }
+
     /** Records changes to result? */
     void recordResult(bool f) { instFlags[RecordResult] = f; }
 

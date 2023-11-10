@@ -91,6 +91,7 @@ class MemDepUnit
 {
   protected:
     std::string _name;
+    bool delayCtrlSpecLoad;
 
   public:
     /** Empty constructor. Must call init() prior to using in this case. */
@@ -101,6 +102,12 @@ class MemDepUnit
 
     /** Frees up any memory allocated. */
     ~MemDepUnit();
+
+    /* HW3 - 2.3.2 */
+    std::set<uint64_t> branchSet;
+    void unresolvedBranchInsert(const DynInstPtr &inst);
+    void unresolvedBranchRemove(const DynInstPtr &inst);
+    void unresolvedBranchResolve(const DynInstPtr &inst);
 
     /** Returns the name of the memory dependence unit. */
     std::string name() const { return _name; }

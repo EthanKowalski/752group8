@@ -559,6 +559,7 @@ InstructionQueue::hasReadyInsts()
     return false;
 }
 
+// BOOKMARK
 void
 InstructionQueue::insert(const DynInstPtr &new_inst)
 {
@@ -595,6 +596,10 @@ InstructionQueue::insert(const DynInstPtr &new_inst)
         memDepUnit[new_inst->threadNumber].insert(new_inst);
     } else {
         addIfReady(new_inst);
+    }
+
+    if (new_inst->isCondCtrl()){
+      memDepUnit[new_inst->threadNumber].unresolvedBranchInsert(new_inst);
     }
 
     ++iqStats.instsAdded;
@@ -962,9 +967,14 @@ InstructionQueue::commit(const InstSeqNum &inst, ThreadID tid)
     assert(freeEntries == (numEntries - countInsts()));
 }
 
+// BOOKMARK
 int
 InstructionQueue::wakeDependents(const DynInstPtr &completed_inst)
 {
+  if (completed_inst->isCondCtrl()){
+    memDepUnit[completed_inst->threadNumber].unresolvedBranchResolve(completed_inst);
+  }
+
     int dependents = 0;
 
     // The instruction queue here takes care of both floating and int ops
@@ -1211,6 +1221,10 @@ InstructionQueue::doSquash(ThreadID tid)
             squashed_inst->isSquashedInIQ()) {
             --squash_it;
             continue;
+        }
+
+        if (squashed_inst->isCondCtrl()) {
+          memDepUnit[tid].unresolvedBranchRemove(squashed_inst);
         }
 
         if (!squashed_inst->isIssued() ||
