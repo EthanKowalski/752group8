@@ -31,7 +31,7 @@ processor.cores[0].core.delayCtrlSpecLoad = False
 # flag for delaying tainted load
 processor.cores[0].core.delayTaintedLoad = False
 
-# processor.cores[0].core.max_insts_any_thread=250000000
+processor.cores[0].core.max_insts_any_thread=250000000
 
 # Add them to the board
 board = SimpleBoard(
@@ -41,13 +41,13 @@ board = SimpleBoard(
     cache_hierarchy=cache_hierarchy,
 )
 
-binary = CustomResource("grayson/spectre.gcc");
-board.set_se_binary_workload(binary)
+# binary = CustomResource("grayson/spectre.gcc");
+# board.set_se_binary_workload(binary)
 
-# board.set_se_binary_workload(
-#    binary = CustomResource("../spec2006/gcc/gcc_base.x86_64_sse"),
-#    arguments = ["../spec2006/gcc/input/scilab.i", "-o scilab.o"],
-#    )
+board.set_se_binary_workload(
+   binary = CustomResource("grayson/spec2006/gcc/gcc_base.x86_64_sse"),
+   arguments = ["grayson/spec2006/gcc/input/scilab.i", "-o scilab.o"],
+   )
 
 simulator = Simulator(board=board)
 
