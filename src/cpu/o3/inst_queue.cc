@@ -562,6 +562,10 @@ InstructionQueue::hasReadyInsts()
 void
 InstructionQueue::insert(const DynInstPtr &new_inst)
 {
+    if(new_inst->isCondCtrl()){
+        memDepUnit[new_inst->threadNumber].insertUnresolvedBranch(new_inst);
+    }
+
     if (new_inst->isFloating()) {
         iqIOStats.fpInstQueueWrites++;
     } else if (new_inst->isVector()) {
@@ -965,6 +969,10 @@ InstructionQueue::commit(const InstSeqNum &inst, ThreadID tid)
 int
 InstructionQueue::wakeDependents(const DynInstPtr &completed_inst)
 {
+    if(completed_inst->isCondCtrl()){
+        memDepUnit[completed_inst->threadNumber].resolveBranch(completed_inst);
+    }
+
     int dependents = 0;
 
     // The instruction queue here takes care of both floating and int ops
@@ -1211,6 +1219,10 @@ InstructionQueue::doSquash(ThreadID tid)
             squashed_inst->isSquashedInIQ()) {
             --squash_it;
             continue;
+        }
+
+        if(squashed_inst->isCondCtrl()){
+            memDepUnit[squashed_inst->threadNumber].removeUnresolvedBranch(squashed_inst);
         }
 
         if (!squashed_inst->isIssued() ||

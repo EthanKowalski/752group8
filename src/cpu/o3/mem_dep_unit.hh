@@ -91,10 +91,14 @@ class MemDepUnit
 {
   protected:
     std::string _name;
+    bool delayCtrlSpecLoad;
 
   public:
     /** Empty constructor. Must call init() prior to using in this case. */
     MemDepUnit();
+
+    /** Tracks in-flight branch colors (seqNum)*/
+    std::set<uint64_t> branchColors;
 
     /** Constructs a MemDepUnit with given parameters. */
     MemDepUnit(const BaseO3CPUParams &params);
@@ -160,6 +164,15 @@ class MemDepUnit
 
     /** Debugging function to dump the lists of instructions. */
     void dumpLists();
+
+    /** Insert unresolved branch */
+    void insertUnresolvedBranch(const DynInstPtr &inst);
+
+    /** Remove unresolved branch */
+    void removeUnresolvedBranch(const DynInstPtr &inst);
+
+    /** Resolve branch */
+    void resolveBranch(const DynInstPtr &inst);
 
   private:
 

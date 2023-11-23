@@ -138,6 +138,10 @@ class BaseO3CPU(BaseCPU):
         5, "Time buffer size for forward communication"
     )
 
+    delayCtrlSpecLoad = Param.Bool(
+        False,
+        "Should loads be forced to wait for"
+        "dependent branches to resolve")
     LQEntries = Param.Unsigned(32, "Number of load queue entries")
     SQEntries = Param.Unsigned(32, "Number of store queue entries")
     LSQDepCheckShift = Param.Unsigned(

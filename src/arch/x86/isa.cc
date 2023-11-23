@@ -215,15 +215,34 @@ ISA::readMiscRegNoEffect(RegIndex idx) const
     return regVal[idx];
 }
 
+//uint64_t off_amount = 0;
+uint64_t old_val = 0;
+uint64_t new_val = 0;
+//uint64_t random = 0;
+
 RegVal
 ISA::readMiscReg(RegIndex idx)
 {
     if (idx == misc_reg::Tsc) {
         uint64_t val = regVal[misc_reg::Tsc] + tc->getCpuPtr()->curCycle(); // Get TSC
-        if (fuzz_TSC) val = val + rand()/(RAND_MAX/128) - 64; // Apply random offset
+        if (fuzz_TSC && ((rand()/(RAND_MAX/2)) == 0)) {
+            //val = old_val + (val - old_val)/4;
+            new_val = old_val + 5;
+            if(new_val < val) val = new_val;
+            //off_amount = val - new_val;
+            //val = old_val + random;
+        }
+        //off_amount /= 2;
+        old_val = val;
+        // if (fuzz_TSC && !off_amount){
+        //     off_amount = rand()/(RAND_MAX/400) + 200;
+        // }
+        //if (fuzz_TSC) val = val + rand()/(RAND_MAX/128) - 64; // Apply random offset
         //if (fuzz_TSC) val = val & (0xFFFFFFFFFFFFFF80 + 0x40); // Round to nearest 0x80
         return val;
     }
+
+    //if(fuzz_TSC) off_amount -= (rand()/(RAND_MAX/10) + 1);
 
     if (idx == misc_reg::Fsw) {
         RegVal fsw = regVal[misc_reg::Fsw];

@@ -59,7 +59,8 @@ MemDepUnit::MemDepUnit(const BaseO3CPUParams &params)
       depPred(params.store_set_clear_period, params.SSITSize,
               params.LFSTSize),
       iqPtr(NULL),
-      stats(nullptr)
+      stats(nullptr),
+      delayCtrlSpecLoad(params.delayCtrlSpecLoad)
 {
     DPRINTF(MemDepUnit, "Creating MemDepUnit object.\n");
 }
@@ -601,6 +602,19 @@ MemDepUnit::findInHash(const DynInstConstPtr &inst)
 void
 MemDepUnit::moveToReady(MemDepEntryPtr &woken_inst_entry)
 {
+
+    // Check for prior unresolved branches
+    for(auto x : branchColors){
+        if(x < woken_inst_entry->inst->seqNum){
+            woken_inst_entry->inst->setWaitBranchResolve(true);
+            return;
+        }
+    }
+
+    if(woken_inst_entry->inst->readWaitBranchResolve()){
+        woken_inst_entry->inst->setWaitBranchResolve(false);
+    }
+
     DPRINTF(MemDepUnit, "Adding instruction [sn:%lli] "
             "to the ready list.\n", woken_inst_entry->inst->seqNum);
 
@@ -638,6 +652,41 @@ MemDepUnit::dumpLists()
 #ifdef GEM5_DEBUG
     cprintf("Memory dependence entries: %i\n", MemDepEntry::memdep_count);
 #endif
+}
+
+void
+MemDepUnit::insertUnresolvedBranch(const DynInstPtr &inst)
+{
+    if(delayCtrlSpecLoad){
+        branchColors.insert(inst->seqNum);
+    }
+}
+
+void
+MemDepUnit::removeUnresolvedBranch(const DynInstPtr &inst)
+{
+    if(delayCtrlSpecLoad){
+        branchColors.erase(inst->seqNum);
+    }
+}
+
+void
+MemDepUnit::resolveBranch(const DynInstPtr &inst)
+{
+    if(delayCtrlSpecLoad){
+        branchColors.erase(inst->seqNum);
+        //iqPtr->wakeDependents(inst);
+        for(ThreadID tid = 0; tid < MaxThreads; tid++){
+            ListIt inst_list_it = instList[tid].begin();
+            while(inst_list_it != instList[tid].end()){
+                if((*inst_list_it)->readWaitBranchResolve()){
+                    MemDepEntryPtr inst_entry = findInHash(*inst_list_it);
+                    moveToReady(inst_entry);
+                }
+                inst_list_it++;
+            }
+        }
+    }
 }
 
 } // namespace o3

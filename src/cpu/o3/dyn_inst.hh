@@ -187,6 +187,7 @@ class DynInst : public ExecContext, public RefCounted
         ReqMade,
         MemOpDone,
         HtmFromTransaction,
+        WaitBranchResolve,
         MaxFlags
     };
 
@@ -531,6 +532,24 @@ class DynInst : public ExecContext, public RefCounted
         std::unique_ptr<PCStateBase> next_pc(pc->clone());
         staticInst->advancePC(*next_pc);
         return *next_pc != *predPC;
+    }
+
+    /** Returns whether the instruction is waiting for
+     *  dependent branches to resolve
+     */
+    bool
+    readWaitBranchResolve()
+    {
+        return instFlags[WaitBranchResolve];
+    }
+
+    /** Sets whether the instruction is waiting for
+     * dependent branches to resolve
+    */
+    void
+    setWaitBranchResolve(bool wait)
+    {
+        instFlags[WaitBranchResolve] = wait;
     }
 
     //
